@@ -557,11 +557,25 @@
         
         .qrcode-img {
             width: 180px;
-            height: auto;
+            height: 180px;
             border-radius: 8px;
             border: 1px solid #eee;
-            transition: transform 0.3s;
+            transition: transform 0.3s, opacity 0.3s;
             max-width: 100%;
+            object-fit: cover;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        .qrcode-img.loaded {
+            animation: none;
+            background: none;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
         
         .qrcode-img:hover {
@@ -777,11 +791,11 @@
                     <div class="reward-title">如果觉得这个工具有帮助，可以考虑赞赏支持～</div>
                     <div class="reward-qrcodes">
                         <div class="qrcode-item">
-                            <img src="wx.JPG" alt="微信支付" class="qrcode-img">
+                            <img data-src="wx.JPG" alt="微信支付" class="qrcode-img" id="wxImg">
                             <div class="qrcode-label">微信支付</div>
                         </div>
                         <div class="qrcode-item">
-                            <img src="zfb.JPG" alt="支付宝" class="qrcode-img">
+                            <img data-src="zfb.JPG" alt="支付宝" class="qrcode-img" id="zfbImg">
                             <div class="qrcode-label">支付宝</div>
                         </div>
                     </div>
@@ -837,7 +851,19 @@
             const rewardModal = document.getElementById('rewardModal');
             const rewardButton = document.getElementById('rewardButton');
             const closeModal = document.getElementById('closeModal');
-            rewardButton.addEventListener('click', () => { rewardModal.classList.add('show'); });
+            let imagesLoaded = false;
+            
+            rewardButton.addEventListener('click', () => {
+                rewardModal.classList.add('show');
+                // 首次打开时异步加载图片
+                if (!imagesLoaded) {
+                    imagesLoaded = true;
+                    document.querySelectorAll('.qrcode-img[data-src]').forEach(img => {
+                        img.onload = () => img.classList.add('loaded');
+                        img.src = img.dataset.src;
+                    });
+                }
+            });
             closeModal.addEventListener('click', () => { rewardModal.classList.remove('show'); });
             rewardModal.addEventListener('click', (e) => { if (e.target === rewardModal) rewardModal.classList.remove('show'); });
         });
