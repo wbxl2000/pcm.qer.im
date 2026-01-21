@@ -55,6 +55,9 @@
                 onStateChange: (evt) => this._onState(evt),
             });
 
+            // 从 localStorage 恢复设置
+            this._loadSettings();
+
             // 绑定参数选择器
             const sampleRateSelect = document.getElementById('sampleRateSelect');
             const bitDepthSelect = document.getElementById('bitDepthSelect');
@@ -62,18 +65,22 @@
             const endiannessSelect = document.getElementById('endiannessSelect');
             if (sampleRateSelect) sampleRateSelect.addEventListener('change', (e) => {
                 this.webaudio.config.sampleRate = parseInt(e.target.value, 10);
+                this._saveSettings();
                 if (this.data.rawPcm) this._refreshFromConfig();
             });
             if (bitDepthSelect) bitDepthSelect.addEventListener('change', (e) => {
                 this.webaudio.config.bitDepth = parseInt(e.target.value, 10);
+                this._saveSettings();
                 if (this.data.rawPcm) this._refreshFromConfig();
             });
             if (channelsSelect) channelsSelect.addEventListener('change', (e) => {
                 this.webaudio.config.channels = parseInt(e.target.value, 10);
+                this._saveSettings();
                 if (this.data.rawPcm) this._refreshFromConfig();
             });
             if (endiannessSelect) endiannessSelect.addEventListener('change', (e) => {
                 this.webaudio.config.endianness = e.target.value;
+                this._saveSettings();
                 if (this.data.rawPcm) this._refreshFromConfig();
             });
 
@@ -145,6 +152,41 @@
             if (endiannessSelect) endiannessSelect.value = String(this.webaudio.config.endianness || 'little');
         }
 
+        _saveSettings() {
+            const settings = {
+                sampleRate: this.webaudio.config.sampleRate,
+                bitDepth: this.webaudio.config.bitDepth,
+                channels: this.webaudio.config.channels,
+                endianness: this.webaudio.config.endianness
+            };
+            try {
+                localStorage.setItem('pcm_player_settings', JSON.stringify(settings));
+            } catch (e) { /* ignore */ }
+        }
+
+        _loadSettings() {
+            try {
+                const saved = localStorage.getItem('pcm_player_settings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    if (settings.sampleRate) this.webaudio.config.sampleRate = settings.sampleRate;
+                    if (settings.bitDepth) this.webaudio.config.bitDepth = settings.bitDepth;
+                    if (settings.channels) this.webaudio.config.channels = settings.channels;
+                    if (settings.endianness) this.webaudio.config.endianness = settings.endianness;
+                }
+            } catch (e) { /* ignore */ }
+            // 始终同步 UI 和 config，确保一致性
+            this._syncSelectorsFromConfig();
+        }
+
+        _getSavedSetting(key) {
+            try {
+                const saved = localStorage.getItem('pcm_player_settings');
+                if (saved) return JSON.parse(saved)[key];
+            } catch (e) { /* ignore */ }
+            return null;
+        }
+
         async _onFiles(event) {
             const files = Array.from(event.target.files);
             if (!files.length) return;
@@ -180,14 +222,13 @@
                 document.getElementById('convertWavButton').disabled = true;
             } else {
                 const arrayBuffer = await file.arrayBuffer();
-                const sr = Utils.detectSampleRateFromFileName(file.name) || 48000;
-                const end = Utils.detectEndiannessFromFileName(file.name) || Utils.detectSystemEndianness();
-                this.webaudio.config.sampleRate = sr;
-                this.webaudio.config.endianness = end;
+                // 样例文件特判（覆盖当前设置）
                 if (/qlx_13sec/i.test(file.name)) {
+                    this.webaudio.config.sampleRate = 24000;
                     this.webaudio.config.bitDepth = 32;
+                    this._syncSelectorsFromConfig();
                 }
-                this._syncSelectorsFromConfig();
+                // 其他文件直接使用当前 UI 上的设置（已从 localStorage 恢复或用户手动修改）
                 this.webaudio.loadPCM(arrayBuffer);
                 this.data.rawPcm = arrayBuffer;
                 this.data.fileType = 'pcm';
