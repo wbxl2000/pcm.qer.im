@@ -87,8 +87,10 @@
             // 转换按钮
             const convertMp3Btn = document.getElementById('convertButton');
             const convertWavBtn = document.getElementById('convertWavButton');
+            const convertPcmBtn = document.getElementById('convertPcmButton');
             if (convertMp3Btn) convertMp3Btn.addEventListener('click', () => this._convertToMp3());
             if (convertWavBtn) convertWavBtn.addEventListener('click', () => this._convertToWav());
+            if (convertPcmBtn) convertPcmBtn.addEventListener('click', () => this._convertToPcm());
         }
 
         _bindControls() { this._applyVisibility(); }
@@ -214,21 +216,41 @@
                 const url = URL.createObjectURL(file);
                 this.data.fileUrl = url;
                 this.data.fileType = ext;
+                this.data.originalFile = file; // 保存原始文件用于转换
+                // 解析文件头获取原始参数（不受 Web Audio API 重采样影响）
+                this.data.originalParams = await Utils.parseAudioHeader(file);
                 await this.wavesurfer.loadUrl(url);
-                this._updateFileInfo(ext.toUpperCase(), file.size, this.wavesurfer.getDuration());
+                // 优先使用原始参数，fallback 到解码后参数
+                const audioParams = this.data.originalParams || this.wavesurfer.getAudioParams();
+                this._updateFileInfo(ext.toUpperCase(), file.size, this.wavesurfer.getDuration(), audioParams);
+                this._syncSelectorsForNonPcm(audioParams);
                 this._drawFromAudioElement(url);
                 if (this.htmlAudio) this.htmlAudio.src = url;
                 document.getElementById('convertButton').disabled = true;
                 document.getElementById('convertWavButton').disabled = true;
+                document.getElementById('convertPcmButton').disabled = false; // MP3/WAV 可以转 PCM
             } else {
                 const arrayBuffer = await file.arrayBuffer();
-                // 样例文件特判（覆盖当前设置）
+                // PCM 文件：启用参数选择器
+                this._enableSelectors();
+                // 尝试从文件名解析参数（支持多种格式）
+                const parsed = Utils.parseParamsFromFileName(file.name);
+                let configChanged = false;
+                if (parsed.sampleRate) { this.webaudio.config.sampleRate = parsed.sampleRate; configChanged = true; }
+                if (parsed.bitDepth) { this.webaudio.config.bitDepth = parsed.bitDepth; configChanged = true; }
+                if (parsed.channels) { this.webaudio.config.channels = parsed.channels; configChanged = true; }
+                if (parsed.endianness) { this.webaudio.config.endianness = parsed.endianness; configChanged = true; }
+                
+                // 样例文件特判（覆盖）
                 if (/qlx_13sec/i.test(file.name)) {
                     this.webaudio.config.sampleRate = 24000;
-                    this.webaudio.config.bitDepth = 32;
-                    this._syncSelectorsFromConfig();
+                    this.webaudio.config.bitDepth = 16;
+                    this.webaudio.config.channels = 2;
+                    configChanged = true;
                 }
-                // 其他文件直接使用当前 UI 上的设置（已从 localStorage 恢复或用户手动修改）
+                
+                // config 有变化时同步到 UI
+                if (configChanged) this._syncSelectorsFromConfig();
                 this.webaudio.loadPCM(arrayBuffer);
                 this.data.rawPcm = arrayBuffer;
                 this.data.fileType = 'pcm';
@@ -252,6 +274,7 @@
                 if (this.htmlAudio) this.htmlAudio.src = url;
                 document.getElementById('convertButton').disabled = false;
                 document.getElementById('convertWavButton').disabled = false;
+                document.getElementById('convertPcmButton').disabled = true; // PCM 不需要转 PCM
             }
             document.getElementById('playButton').disabled = false;
             document.getElementById('stopButton').disabled = false;
@@ -296,9 +319,11 @@
             try {
                 const resp = await fetch('./qlx_13sec.pcm');
                 const buf = await resp.arrayBuffer();
+                this._enableSelectors(); // PCM 文件启用选择器
                 this.webaudio.config.sampleRate = 24000;
                 this.webaudio.config.endianness = Utils.detectSystemEndianness();
-                this.webaudio.config.bitDepth = 32; // qlx_13sec 默认 32bit
+                this.webaudio.config.bitDepth = 16;
+                this.webaudio.config.channels = 2;
                 this._syncSelectorsFromConfig();
                 this.webaudio.loadPCM(buf);
                 this.data.rawPcm = buf;
@@ -406,7 +431,7 @@
             }
         }
 
-        _updateFileInfo(type, size, duration) {
+        _updateFileInfo(type, size, duration, audioParams) {
             let html = `
                 <span class="file-tag type">${type}</span>
                 <span class="file-tag size">${(size / 1024).toFixed(2)} KB</span>
@@ -418,9 +443,51 @@
                     <span class="file-tag channels">${this.webaudio.config.channels}ch</span>
                     <span class="file-tag bit-depth">${this.webaudio.config.bitDepth}bit</span>
                 `;
+            } else if (audioParams) {
+                // MP3/WAV 显示从文件解码获取的参数
+                html += `
+                    <span class="file-tag sample-rate">${audioParams.sampleRate}Hz</span>
+                    <span class="file-tag channels">${audioParams.channels}ch</span>
+                `;
             }
             this.fileInfo.innerHTML = html;
             this.durationEl.textContent = Utils.formatTime(duration);
+        }
+
+        // MP3/WAV 加载后更新选择器显示并禁用（仅供参考，不可编辑）
+        _syncSelectorsForNonPcm(audioParams) {
+            const sampleRateSelect = document.getElementById('sampleRateSelect');
+            const bitDepthSelect = document.getElementById('bitDepthSelect');
+            const channelsSelect = document.getElementById('channelsSelect');
+            const endiannessSelect = document.getElementById('endiannessSelect');
+            
+            if (audioParams) {
+                // 更新显示值（尽可能匹配，否则保持原值）
+                if (sampleRateSelect) {
+                    const srOption = Array.from(sampleRateSelect.options).find(o => parseInt(o.value) === audioParams.sampleRate);
+                    if (srOption) sampleRateSelect.value = srOption.value;
+                }
+                if (channelsSelect) {
+                    channelsSelect.value = String(audioParams.channels);
+                }
+            }
+            // 禁用所有选择器（MP3/WAV 参数由文件决定）
+            if (sampleRateSelect) sampleRateSelect.disabled = true;
+            if (bitDepthSelect) bitDepthSelect.disabled = true;
+            if (channelsSelect) channelsSelect.disabled = true;
+            if (endiannessSelect) endiannessSelect.disabled = true;
+        }
+
+        // PCM 加载后启用选择器
+        _enableSelectors() {
+            const sampleRateSelect = document.getElementById('sampleRateSelect');
+            const bitDepthSelect = document.getElementById('bitDepthSelect');
+            const channelsSelect = document.getElementById('channelsSelect');
+            const endiannessSelect = document.getElementById('endiannessSelect');
+            if (sampleRateSelect) sampleRateSelect.disabled = false;
+            if (bitDepthSelect) bitDepthSelect.disabled = false;
+            if (channelsSelect) channelsSelect.disabled = false;
+            if (endiannessSelect) endiannessSelect.disabled = false;
         }
 
         _onSeekClick(e) {
@@ -600,6 +667,85 @@
             } catch (e) {
                 alert('WAV 转换失败: ' + e.message);
             } finally {
+                setNormal();
+            }
+        }
+
+        async _convertToPcm() {
+            if (!this.data.originalFile) { alert('请先加载 MP3/WAV 文件'); return; }
+            const button = document.getElementById('convertPcmButton');
+            const originalHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>转换为 PCM';
+            const setLoading = () => { button.classList.add('loading'); button.disabled = true; button.innerHTML = '<div class="loading-spinner"></div>转换中...'; };
+            const setNormal = () => { button.classList.remove('loading'); button.disabled = false; button.innerHTML = originalHTML; };
+            setLoading();
+            let audioContext = null;
+            try {
+                // 读取文件并解码
+                const arrayBuffer = await this.data.originalFile.arrayBuffer();
+                // 使用原始采样率创建 AudioContext，避免重采样
+                const originalSampleRate = this.data.originalParams?.sampleRate;
+                const ctxOptions = originalSampleRate ? { sampleRate: originalSampleRate } : {};
+                audioContext = new (window.AudioContext || window.webkitAudioContext)(ctxOptions);
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // WAV 有 bitDepth，MP3 没有则固定 16bit
+                const bitDepth = this.data.originalParams?.bitDepth || 16;
+                const isLE = this.webaudio.config.endianness !== 'big'; // little-endian by default
+                const channels = audioBuffer.numberOfChannels;
+                const sampleRate = audioBuffer.sampleRate;
+                const length = audioBuffer.length;
+                const bytesPerSample = bitDepth / 8;
+                
+                // 创建 PCM 数据
+                const pcmData = new ArrayBuffer(length * channels * bytesPerSample);
+                const view = new DataView(pcmData);
+                
+                for (let i = 0; i < length; i++) {
+                    for (let ch = 0; ch < channels; ch++) {
+                        const sample = audioBuffer.getChannelData(ch)[i];
+                        const offset = (i * channels + ch) * bytesPerSample;
+                        
+                        switch (bitDepth) {
+                            case 8:
+                                // 8bit PCM 标准为无符号格式 (0-255)
+                                view.setUint8(offset, Math.max(0, Math.min(255, Math.round((sample + 1) * 128))));
+                                break;
+                            case 16:
+                                view.setInt16(offset, Math.max(-32768, Math.min(32767, Math.round(sample * 32768))), isLE);
+                                break;
+                            case 24: {
+                                const val = Math.max(-8388608, Math.min(8388607, Math.round(sample * 8388608)));
+                                if (isLE) {
+                                    view.setUint8(offset, val & 0xFF);
+                                    view.setUint8(offset + 1, (val >> 8) & 0xFF);
+                                    view.setUint8(offset + 2, (val >> 16) & 0xFF);
+                                } else {
+                                    view.setUint8(offset, (val >> 16) & 0xFF);
+                                    view.setUint8(offset + 1, (val >> 8) & 0xFF);
+                                    view.setUint8(offset + 2, val & 0xFF);
+                                }
+                                break;
+                            }
+                            case 32:
+                                view.setInt32(offset, Math.max(-2147483648, Math.min(2147483647, Math.round(sample * 2147483647))), isLE);
+                                break;
+                        }
+                    }
+                }
+                
+                const blob = new Blob([pcmData], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                // 文件名包含参数信息
+                const baseName = (this.data.fileName || 'audio').replace(/\.[^/.]+$/, '');
+                a.href = url;
+                a.download = `${baseName}_${sampleRate}Hz_${bitDepth}bit_${channels}ch.pcm`;
+                a.style.display = 'none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 2000);
+            } catch (e) {
+                alert('PCM 转换失败: ' + e.message);
+            } finally {
+                if (audioContext) audioContext.close();
                 setNormal();
             }
         }

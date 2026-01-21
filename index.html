@@ -319,6 +319,34 @@
             animation: spin 1s linear infinite;
         }
 
+        #convertPcmButton {
+            background: #f8f9fa;
+            color: #9C27B0;
+            border: 1px solid #9C27B0;
+        }
+
+        #convertPcmButton:hover:not(:disabled) {
+            background: #F3E5F5;
+        }
+
+        #convertPcmButton.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        #convertPcmButton.loading .loading-spinner {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #9C27B0;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
         .audio-info {
             margin-top: 20px;
             padding: 15px;
@@ -824,6 +852,12 @@
                         <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                     </svg>
                     转换为 WAV
+                </button>
+                <button id="convertPcmButton" disabled>
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    转换为 PCM
                 </button>
             </div>
 

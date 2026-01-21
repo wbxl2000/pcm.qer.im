@@ -98,6 +98,18 @@
         getDuration() {
             return this.ws ? this.ws.getDuration() : 0;
         }
+
+        // 获取音频参数（从解码后的 AudioBuffer）
+        getAudioParams() {
+            if (!this.ws) return null;
+            const decodedData = this.ws.getDecodedData();
+            if (!decodedData) return null;
+            return {
+                sampleRate: decodedData.sampleRate,
+                channels: decodedData.numberOfChannels,
+                duration: decodedData.duration
+            };
+        }
     }
 
     window.WaveSurferPlayer = WaveSurferPlayer;
