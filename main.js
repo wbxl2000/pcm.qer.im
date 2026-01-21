@@ -195,37 +195,46 @@
         }
 
         async _loadSample() {
-            const resp = await fetch('./qlx_13sec.pcm');
-            const buf = await resp.arrayBuffer();
-            this.webaudio.config.sampleRate = 24000;
-            this.webaudio.config.endianness = Utils.detectSystemEndianness();
-            this.webaudio.config.bitDepth = 32; // qlx_13sec 默认 32bit
-            this._syncSelectorsFromConfig();
-            this.webaudio.loadPCM(buf);
-            this.data.rawPcm = buf;
-            this.data.fileType = 'pcm';
-            const header = Utils.createWavHeader(
-                this.data.rawPcm.byteLength,
-                this.webaudio.config.channels,
-                this.webaudio.config.sampleRate,
-                this.webaudio.config.bitDepth
-            );
-            const wavBlob = new Blob([header, buf], { type: 'audio/wav' });
-            if (this.data.wavUrl) URL.revokeObjectURL(this.data.wavUrl);
-            const url = URL.createObjectURL(wavBlob);
-            this.data.wavUrl = url;
-            await this.wavesurfer.loadUrl(url);
-            this.fileNameDisplay.textContent = 'qlx_13sec.pcm';
-            this.fileNameDisplay.classList.remove('no-file');
-            this._updateFileInfo('PCM', buf.byteLength, this.webaudio.data.audioBuffer.duration);
-            this._drawFromBuffer(this.webaudio.data.audioBuffer.getChannelData(0));
-            document.getElementById('convertButton').disabled = false;
-            document.getElementById('convertWavButton').disabled = false;
-            if (this.htmlAudio) this.htmlAudio.src = url;
-            const playBtn = document.getElementById('playButton');
-            const stopBtn = document.getElementById('stopButton');
-            if (playBtn) playBtn.disabled = false;
-            if (stopBtn) stopBtn.disabled = false;
+            const button = document.getElementById('loadSampleButton');
+            const original = button.innerHTML;
+            const setLoading = () => { button.classList.add('loading'); button.innerHTML = original + '<div class="loading-spinner"></div>'; };
+            const setNormal = () => { button.classList.remove('loading'); button.innerHTML = original; };
+            setLoading();
+            try {
+                const resp = await fetch('./qlx_13sec.pcm');
+                const buf = await resp.arrayBuffer();
+                this.webaudio.config.sampleRate = 24000;
+                this.webaudio.config.endianness = Utils.detectSystemEndianness();
+                this.webaudio.config.bitDepth = 32; // qlx_13sec 默认 32bit
+                this._syncSelectorsFromConfig();
+                this.webaudio.loadPCM(buf);
+                this.data.rawPcm = buf;
+                this.data.fileType = 'pcm';
+                const header = Utils.createWavHeader(
+                    this.data.rawPcm.byteLength,
+                    this.webaudio.config.channels,
+                    this.webaudio.config.sampleRate,
+                    this.webaudio.config.bitDepth
+                );
+                const wavBlob = new Blob([header, buf], { type: 'audio/wav' });
+                if (this.data.wavUrl) URL.revokeObjectURL(this.data.wavUrl);
+                const url = URL.createObjectURL(wavBlob);
+                this.data.wavUrl = url;
+                await this.wavesurfer.loadUrl(url);
+                this.fileNameDisplay.textContent = 'qlx_13sec.pcm';
+                this.fileNameDisplay.classList.remove('no-file');
+                this._updateFileInfo('PCM', buf.byteLength, this.webaudio.data.audioBuffer.duration);
+                this._drawFromBuffer(this.webaudio.data.audioBuffer.getChannelData(0));
+                document.getElementById('convertButton').disabled = false;
+                document.getElementById('convertWavButton').disabled = false;
+                if (this.htmlAudio) this.htmlAudio.src = url;
+                const playBtn = document.getElementById('playButton');
+                const stopBtn = document.getElementById('stopButton');
+                if (playBtn) playBtn.disabled = false;
+                if (stopBtn) stopBtn.disabled = false;
+            } finally {
+                setNormal();
+            }
         }
 
         togglePlay() {
