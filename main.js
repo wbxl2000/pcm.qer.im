@@ -13,6 +13,10 @@
             this.fileNameDisplay = document.getElementById('fileNameDisplay');
             this.wavePoints = [];
             this.data = { rawPcm: null, wavUrl: null, fileUrl: null, fileType: null, fileName: '' };
+            
+            // 文件列表
+            this.fileList = [];
+            this.currentFileIndex = -1;
 
             this._bindUI();
             // 先确保可见性，避免在 display:none 时创建 wavesurfer 导致宽度为 0
@@ -28,9 +32,16 @@
             this.canvas.height = this.canvas.offsetHeight;
             document.getElementById('playButton').addEventListener('click', () => this.togglePlay());
             document.getElementById('stopButton').addEventListener('click', () => this.stop());
-            document.getElementById('fileInput').addEventListener('change', (e) => this._onFile(e));
+            document.getElementById('fileInput').addEventListener('change', (e) => this._onFiles(e));
             document.getElementById('loadSampleButton').addEventListener('click', () => this._loadSample());
             this.canvas.addEventListener('click', (e) => this._onSeekClick(e));
+            
+            // 文件列表事件
+            document.getElementById('clearFileList').addEventListener('click', () => this._clearFileList());
+            document.getElementById('fileList').addEventListener('click', (e) => {
+                const item = e.target.closest('.file-list-item');
+                if (item) this._switchFile(parseInt(item.dataset.index, 10));
+            });
         }
 
         _initPlayers() {
@@ -134,9 +145,23 @@
             if (endiannessSelect) endiannessSelect.value = String(this.webaudio.config.endianness || 'little');
         }
 
-        async _onFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        async _onFiles(event) {
+            const files = Array.from(event.target.files);
+            if (!files.length) return;
+            // 过滤有效文件
+            const validFiles = files.filter(f => /\.(pcm|mp3|wav)$/i.test(f.name));
+            if (!validFiles.length) return;
+            // 添加到文件列表
+            for (const file of validFiles) {
+                const ext = file.name.toLowerCase().split('.').pop();
+                this.fileList.push({ file, name: file.name, type: ext });
+            }
+            this._renderFileList();
+            // 自动加载第一个新添加的文件
+            await this._switchFile(this.fileList.length - validFiles.length);
+        }
+
+        async _loadFile(file) {
             this.stop();
             this.fileNameDisplay.textContent = file.name;
             this.fileNameDisplay.classList.remove('no-file');
@@ -151,16 +176,14 @@
                 this._updateFileInfo(ext.toUpperCase(), file.size, this.wavesurfer.getDuration());
                 this._drawFromAudioElement(url);
                 if (this.htmlAudio) this.htmlAudio.src = url;
-                document.getElementById('convertButton').disabled = true; // mp3/wav 默认不转 mp3
-                document.getElementById('convertWavButton').disabled = true; // mp3/wav 不转 wav
+                document.getElementById('convertButton').disabled = true;
+                document.getElementById('convertWavButton').disabled = true;
             } else {
                 const arrayBuffer = await file.arrayBuffer();
-                // 推断采样率/端序
                 const sr = Utils.detectSampleRateFromFileName(file.name) || 48000;
                 const end = Utils.detectEndiannessFromFileName(file.name) || Utils.detectSystemEndianness();
                 this.webaudio.config.sampleRate = sr;
                 this.webaudio.config.endianness = end;
-                // qlx_13sec 默认 32bit 位深
                 if (/qlx_13sec/i.test(file.name)) {
                     this.webaudio.config.bitDepth = 32;
                 }
@@ -168,7 +191,6 @@
                 this.webaudio.loadPCM(arrayBuffer);
                 this.data.rawPcm = arrayBuffer;
                 this.data.fileType = 'pcm';
-                // 生成 WAV url 给 wavesurfer 使用
                 const header = Utils.createWavHeader(
                     this.data.rawPcm.byteLength,
                     this.webaudio.config.channels,
@@ -192,6 +214,36 @@
             }
             document.getElementById('playButton').disabled = false;
             document.getElementById('stopButton').disabled = false;
+        }
+
+        _renderFileList() {
+            const container = document.getElementById('fileListContainer');
+            const list = document.getElementById('fileList');
+            if (this.fileList.length === 0) {
+                container.classList.remove('show');
+                return;
+            }
+            container.classList.add('show');
+            list.innerHTML = this.fileList.map((item, idx) => `
+                <div class="file-list-item ${idx === this.currentFileIndex ? 'active' : ''}" data-index="${idx}">
+                    <svg class="file-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v6h7v10H6z"/></svg>
+                    <span class="file-name">${item.name}</span>
+                    <span class="file-type ${item.type}">${item.type.toUpperCase()}</span>
+                </div>
+            `).join('');
+        }
+
+        async _switchFile(index) {
+            if (index < 0 || index >= this.fileList.length) return;
+            this.currentFileIndex = index;
+            this._renderFileList();
+            await this._loadFile(this.fileList[index].file);
+        }
+
+        _clearFileList() {
+            this.fileList = [];
+            this.currentFileIndex = -1;
+            this._renderFileList();
         }
 
         async _loadSample() {

@@ -654,6 +654,102 @@
             background: #eee;
             color: #333;
         }
+
+        /* 文件列表样式 */
+        .file-list-container {
+            display: none;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .file-list-container.show {
+            display: block;
+        }
+
+        .file-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 0 4px;
+        }
+
+        .file-list-title {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .file-list-clear {
+            font-size: 12px;
+            color: #999;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 2px 6px;
+        }
+
+        .file-list-clear:hover {
+            color: #f44336;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .file-list-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+        }
+
+        .file-list-item:hover {
+            background: #e3f2fd;
+        }
+
+        .file-list-item.active {
+            background: #e3f2fd;
+            border-color: #2196F3;
+        }
+
+        .file-list-item .file-icon {
+            width: 16px;
+            height: 16px;
+            color: #666;
+        }
+
+        .file-list-item .file-name {
+            flex: 1;
+            font-size: 13px;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-list-item .file-type {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .file-list-item .file-type.pcm { background: #fff3e0; color: #ef6c00; }
+        .file-list-item .file-type.mp3 { background: #e8f5e9; color: #2e7d32; }
+        .file-list-item .file-type.wav { background: #e3f2fd; color: #1976D2; }
     </style>
 </head>
 <body>
@@ -663,11 +759,11 @@
         
         <div class="file-input-container">
             <label class="custom-file-input">
-                <input type="file" id="fileInput" accept=".pcm,.mp3,.wav">
+                <input type="file" id="fileInput" accept=".pcm,.mp3,.wav" multiple>
                 <svg class="icon" viewBox="0 0 24 24">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                 </svg>
-                选择或拖入 PCM/MP3/WAV 文件
+                选择或拖入文件（可多选）
             </label>
             <button class="sample-button" id="loadSampleButton">
                 <svg class="icon" viewBox="0 0 24 24">
@@ -675,6 +771,14 @@
                 </svg>
                 加载样例
             </button>
+        </div>
+
+        <div class="file-list-container" id="fileListContainer">
+            <div class="file-list-header">
+                <span class="file-list-title">文件列表</span>
+                <button class="file-list-clear" id="clearFileList">清空</button>
+            </div>
+            <div class="file-list" id="fileList"></div>
         </div>
 
         <div class="waveform-container">
@@ -860,10 +964,11 @@
             });
             playerContainer.addEventListener('drop', (e) => {
                 const dt = e.dataTransfer;
-                if (dt && dt.files && dt.files[0]) {
-                    const input = document.getElementById('fileInput');
-                    input.files = dt.files;
-                    input.dispatchEvent(new Event('change'));
+                if (dt && dt.files && dt.files.length > 0) {
+                    // 直接调用 app 的多文件处理方法
+                    if (window.app) {
+                        window.app._onFiles({ target: { files: dt.files } });
+                    }
                 }
             });
 
