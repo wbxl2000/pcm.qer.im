@@ -208,6 +208,7 @@
         async _loadFile(file) {
             this.stop();
             this.fileNameDisplay.textContent = file.name;
+            this.fileNameDisplay.removeAttribute('data-i18n');
             this.fileNameDisplay.classList.remove('no-file');
             this.data.fileName = file.name;
             const ext = file.name.toLowerCase().split('.').pop();
@@ -340,6 +341,7 @@
                 this.data.wavUrl = url;
                 await this.wavesurfer.loadUrl(url);
                 this.fileNameDisplay.textContent = 'qlx_13sec.pcm';
+                this.fileNameDisplay.removeAttribute('data-i18n');
                 this.fileNameDisplay.classList.remove('no-file');
                 this._updateFileInfo('PCM', buf.byteLength, this.webaudio.data.audioBuffer.duration);
                 this._drawFromBuffer(this.webaudio.data.audioBuffer.getChannelData(0));
@@ -419,14 +421,14 @@
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
                     </svg>
-                    暂停
+                    <span data-i18n="pause">${window.t('pause')}</span>
                 `;
             } else {
                 btn.innerHTML = `
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z"/>
                     </svg>
-                    播放
+                    <span data-i18n="play">${window.t('play')}</span>
                 `;
             }
         }
@@ -581,10 +583,10 @@
         }
 
         async _convertToMp3() {
-            if (!this.webaudio || !this.webaudio.data.audioBuffer) { alert('请先加载 PCM 文件'); return; }
+            if (!this.webaudio || !this.webaudio.data.audioBuffer) { alert(window.t('alertLoadPcm')); return; }
             const button = document.getElementById('convertButton');
             const original = button.innerHTML;
-            const setLoading = () => { button.classList.add('loading'); button.disabled = true; button.innerHTML = '<div class="loading-spinner"></div>转换中...'; };
+            const setLoading = () => { button.classList.add('loading'); button.disabled = true; button.innerHTML = '<div class="loading-spinner"></div>' + window.t('converting'); };
             const setNormal = () => { button.classList.remove('loading'); button.disabled = false; button.innerHTML = original; };
             setLoading();
             try {
@@ -638,17 +640,17 @@
                 a.style.display = 'none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 setTimeout(() => URL.revokeObjectURL(url), 2000);
             } catch (e) {
-                alert('MP3 转换失败: ' + e.message);
+                alert(window.t('alertMp3Fail') + e.message);
             } finally {
                 setNormal();
             }
         }
 
         async _convertToWav() {
-            if (!this.data.rawPcm) { alert('请先加载 PCM 文件'); return; }
+            if (!this.data.rawPcm) { alert(window.t('alertLoadPcm')); return; }
             const button = document.getElementById('convertWavButton');
             const original = button.innerHTML;
-            const setLoading = () => { button.classList.add('loading'); button.disabled = true; button.innerHTML = '<div class="loading-spinner"></div>转换中...'; };
+            const setLoading = () => { button.classList.add('loading'); button.disabled = true; button.innerHTML = '<div class="loading-spinner"></div>' + window.t('converting'); };
             const setNormal = () => { button.classList.remove('loading'); button.disabled = false; button.innerHTML = original; };
             setLoading();
             try {
@@ -665,17 +667,17 @@
                 a.style.display = 'none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 setTimeout(() => URL.revokeObjectURL(url), 2000);
             } catch (e) {
-                alert('WAV 转换失败: ' + e.message);
+                alert(window.t('alertWavFail') + e.message);
             } finally {
                 setNormal();
             }
         }
 
         async _convertToPcm() {
-            if (!this.data.originalFile) { alert('请先加载 MP3/WAV 文件'); return; }
+            if (!this.data.originalFile) { alert(window.t('alertLoadMp3Wav')); return; }
             const button = document.getElementById('convertPcmButton');
-            const originalHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>转换为 PCM';
-            const setLoading = () => { button.classList.add('loading'); button.disabled = true; button.innerHTML = '<div class="loading-spinner"></div>转换中...'; };
+            const originalHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg><span data-i18n="convertPcm">' + window.t('convertPcm') + '</span>';
+            const setLoading = () => { button.classList.add('loading'); button.disabled = true; button.innerHTML = '<div class="loading-spinner"></div>' + window.t('converting'); };
             const setNormal = () => { button.classList.remove('loading'); button.disabled = false; button.innerHTML = originalHTML; };
             setLoading();
             let audioContext = null;
@@ -743,7 +745,7 @@
                 a.style.display = 'none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 setTimeout(() => URL.revokeObjectURL(url), 2000);
             } catch (e) {
-                alert('PCM 转换失败: ' + e.message);
+                alert(window.t('alertPcmFail') + e.message);
             } finally {
                 if (audioContext) audioContext.close();
                 setNormal();

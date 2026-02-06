@@ -573,6 +573,12 @@
             color: #2196F3;
             text-decoration: underline;
         }
+
+        .blog-link-sep {
+            color: #ccc;
+            margin: 0 6px;
+            font-size: 12px;
+        }
         
         /* 赞赏码样式 */
         .reward-container {
@@ -778,12 +784,49 @@
         .file-list-item .file-type.pcm { background: #fff3e0; color: #ef6c00; }
         .file-list-item .file-type.mp3 { background: #e8f5e9; color: #2e7d32; }
         .file-list-item .file-type.wav { background: #e3f2fd; color: #1976D2; }
+
+        /* 语言切换器 */
+        .lang-switcher {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 9999;
+            display: inline-flex;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .lang-btn {
+            padding: 6px 14px;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.15s;
+        }
+        .lang-btn:not(:last-child) {
+            border-right: 1px solid #ddd;
+        }
+        .lang-btn.active {
+            background: #2196F3;
+            color: white;
+        }
+        .lang-btn:hover:not(.active) {
+            background: #f5f5f5;
+        }
     </style>
 </head>
 <body>
+    <div class="lang-switcher">
+        <button class="lang-btn" data-lang="zh">中</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+    </div>
     <div class="player-container">
-        <div class="drag-overlay">将 PCM/MP3/WAV 文件拖放到此处</div>
-        <h1>PCM/MP3/WAV 音频播放器</h1>
+        <div class="drag-overlay" data-i18n="dragHint">将 PCM/MP3/WAV 文件拖放到此处</div>
+        <h1 data-i18n="title">PCM/MP3/WAV 音频播放器</h1>
         
         <div class="file-input-container">
             <label class="custom-file-input">
@@ -791,31 +834,31 @@
                 <svg class="icon" viewBox="0 0 24 24">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                 </svg>
-                选择或拖入文件（可多选）
+                <span data-i18n="selectFiles">选择或拖入文件（可多选）</span>
             </label>
             <button class="sample-button" id="loadSampleButton">
                 <svg class="icon" viewBox="0 0 24 24">
                     <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                 </svg>
-                加载样例
+                <span data-i18n="loadSample">加载样例</span>
             </button>
         </div>
 
         <div class="file-list-container" id="fileListContainer">
             <div class="file-list-header">
-                <span class="file-list-title">文件列表</span>
-                <button class="file-list-clear" id="clearFileList">清空</button>
+                <span class="file-list-title" data-i18n="fileList">文件列表</span>
+                <button class="file-list-clear" id="clearFileList" data-i18n="clear">清空</button>
             </div>
             <div class="file-list" id="fileList"></div>
         </div>
 
         <div class="waveform-container">
             <div class="mode-switch" id="modeSwitch">
-                <button class="mode-btn" data-mode="wavesurfer">新版图形</button>
-                <button class="mode-btn" data-mode="webaudio">旧版图形</button>
+                <button class="mode-btn" data-mode="wavesurfer" data-i18n="newWaveform">新版图形</button>
+                <button class="mode-btn" data-mode="webaudio" data-i18n="oldWaveform">旧版图形</button>
             </div>
             <div class="waveform-header">
-                <div class="filename" id="fileNameDisplay">未选择文件</div>
+                <div class="filename" id="fileNameDisplay" data-i18n="noFile">未选择文件</div>
                 <div class="file-info" id="fileInfo"></div>
             </div>
             <canvas id="waveformCanvas"></canvas>
@@ -833,37 +876,37 @@
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z"/>
                     </svg>
-                    播放
+                    <span data-i18n="play">播放</span>
                 </button>
                 <button id="stopButton" disabled>
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M6 6h12v12H6z"/>
                     </svg>
-                    停止
+                    <span data-i18n="stop">停止</span>
                 </button>
                 <button id="convertButton" disabled>
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                     </svg>
-                    转换为 MP3
+                    <span data-i18n="convertMp3">转换为 MP3</span>
                 </button>
                 <button id="convertWavButton" disabled>
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                     </svg>
-                    转换为 WAV
+                    <span data-i18n="convertWav">转换为 WAV</span>
                 </button>
                 <button id="convertPcmButton" disabled>
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                     </svg>
-                    转换为 PCM
+                    <span data-i18n="convertPcm">转换为 PCM</span>
                 </button>
             </div>
 
             <div class="params-group">
                 <div class="control-group">
-                    <label for="sampleRateSelect">采样率:</label>
+                    <label for="sampleRateSelect" data-i18n="sampleRate">采样率:</label>
                     <select id="sampleRateSelect" class="audio-select">
                         <option value="8000">8000 Hz</option>
                         <option value="16000">16000 Hz</option>
@@ -875,7 +918,7 @@
                 </div>
 
                 <div class="control-group">
-                    <label for="bitDepthSelect">位深度:</label>
+                    <label for="bitDepthSelect" data-i18n="bitDepth">位深度:</label>
                     <select id="bitDepthSelect" class="audio-select">
                         <option value="8">8 bit</option>
                         <option value="16" selected>16 bit</option>
@@ -885,18 +928,18 @@
                 </div>
 
                 <div class="control-group">
-                    <label for="channelsSelect">声道数:</label>
+                    <label for="channelsSelect" data-i18n="channels">声道数:</label>
                     <select id="channelsSelect" class="audio-select">
-                        <option value="1" selected>单声道</option>
-                        <option value="2">立体声</option>
+                        <option value="1" selected data-i18n="mono">单声道</option>
+                        <option value="2" data-i18n="stereo">立体声</option>
                     </select>
                 </div>
 
                 <div class="control-group">
-                    <label for="endiannessSelect">字节序:</label>
+                    <label for="endiannessSelect" data-i18n="endianness">字节序:</label>
                     <select id="endiannessSelect" class="audio-select">
-                        <option value="little" selected>小端序</option>
-                        <option value="big">大端序</option>
+                        <option value="little" selected data-i18n="littleEndian">小端序</option>
+                        <option value="big" data-i18n="bigEndian">大端序</option>
                     </select>
                 </div>
 
@@ -906,7 +949,7 @@
     </div>
 
     <div class="social-container">
-        <h3 class="support-title">喜欢这个工具？</h3>
+        <h3 class="support-title" data-i18n="likeThisTool">喜欢这个工具？</h3>
         <div class="social-links">
             <a href="https://github.com/wbxl2000/pcm.qer.im" target="_blank" class="github-link">
                 <svg height="24" viewBox="0 0 16 16" width="24">
@@ -928,15 +971,16 @@
                     <path d="M12 3v7" />
                     <path d="M21 17.314c-2.971 -1.923 -15 -8.779 -15 -1.864c0 1.716 1.52 2.55 2.985 2.55c3.512 0 6.814 -5.425 6.814 -8h-6.604" />
                 </svg>
-                赞赏支持
+                <span data-i18n="reward">赞赏支持</span>
             </a>
-            <a href="https://github.com/wbxl2000/pcm.qer.im/issues/new" target="_blank" class="issues-link">
+            <a href="https://tally.so/r/9qQeQK" target="_blank" class="feedback-link">
                 <svg height="24" viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                    <path d="M21 14l-3 -3h-7a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1h9a1 1 0 0 1 1 1v10" />
-                    <path d="M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2" />
+                    <path d="M8 9h8" />
+                    <path d="M8 13h6" />
+                    <path d="M9 18h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-3l-3 3l-3 -3z" />
                 </svg>
-                功能建议
+                <span data-i18n="feedback">问题反馈</span>
             </a>
         </div>
         
@@ -945,7 +989,7 @@
             <div class="modal-content">
                 <button class="close-modal" id="closeModal">×</button>
                 <div class="reward-container">
-                    <div class="reward-title">如果觉得这个工具有帮助，可以考虑赞赏支持～</div>
+                    <div class="reward-title" data-i18n="rewardTitle">如果觉得这个工具有帮助，可以考虑赞赏支持～</div>
                     <div class="reward-qrcodes">
                         <div class="qrcode-item">
                             <img data-src="wx.JPG" alt="微信支付" class="qrcode-img" id="wxImg">
@@ -960,10 +1004,12 @@
             </div>
         </div>
         
-        <span id="busuanzi_container_site_pv" style="display: block; text-align: center; font-size: 12px; color: #999; margin: 10px 0;">本站总访问量<span id="busuanzi_value_site_pv"></span>次</span>
+        <span id="busuanzi_container_site_pv" style="display: block; text-align: center; font-size: 12px; color: #999; margin: 10px 0;"><span data-i18n="totalVisits">本站总访问量</span><span id="busuanzi_value_site_pv"></span><span data-i18n="times">次</span></span>
         
         <div class="blog-link-container">
-            <a href="https://blog.qer.im/projects" target="_blank" class="blog-link-text">更多音视频工具请访问我的博客 blog.qer.im/projects </a>
+            <a href="https://blog.qer.im/projects" target="_blank" class="blog-link-text" data-i18n="blogLink">更多音视频工具请访问我的博客 blog.qer.im/projects</a>
+            <span class="blog-link-sep">·</span>
+            <a href="https://github.com/wbxl2000/pcm.qer.im/issues/new" target="_blank" class="blog-link-text" data-i18n="githubIssues">GitHub Issues</a>
         </div>
         
         <div class="visitor-stats" style="display: none;">
@@ -973,6 +1019,161 @@
             </div>
         </div>
     </div>
+    <!-- i18n 国际化 -->
+    <script>
+    (function() {
+        window.I18N = {
+            zh: {
+                // 页面标题与 SEO
+                pageTitle: 'PCM/MP3/WAV 音频播放器',
+                metaDescription: '在线 PCM/MP3/WAV 音频播放器，支持音频文件播放、波形显示和格式转换功能。',
+                ogTitle: 'PCM/MP3/WAV 音频播放器 - 在线播放和转换工具',
+                ogDescription: '在线 PCM/MP3/WAV 音频播放器，支持音频文件播放、波形显示和格式转换功能。',
+                // 页面文本
+                title: 'PCM/MP3/WAV 音频播放器',
+                dragHint: '将 PCM/MP3/WAV 文件拖放到此处',
+                selectFiles: '选择或拖入文件（可多选）',
+                loadSample: '加载样例',
+                fileList: '文件列表',
+                clear: '清空',
+                noFile: '未选择文件',
+                newWaveform: '新版图形',
+                oldWaveform: '旧版图形',
+                play: '播放',
+                pause: '暂停',
+                stop: '停止',
+                convertMp3: '转换为 MP3',
+                convertWav: '转换为 WAV',
+                convertPcm: '转换为 PCM',
+                sampleRate: '采样率:',
+                bitDepth: '位深度:',
+                channels: '声道数:',
+                endianness: '字节序:',
+                mono: '单声道',
+                stereo: '立体声',
+                littleEndian: '小端序',
+                bigEndian: '大端序',
+                likeThisTool: '喜欢这个工具？',
+                reward: '赞赏支持',
+                feedback: '问题反馈',
+                rewardTitle: '如果觉得这个工具有帮助，可以考虑赞赏支持～',
+                totalVisits: '本站总访问量',
+                times: '次',
+                blogLink: '更多音视频工具请访问我的博客 blog.qer.im/projects',
+                githubIssues: 'GitHub Issues',
+                // JS 动态文本
+                alertLoadPcm: '请先加载 PCM 文件',
+                alertLoadMp3Wav: '请先加载 MP3/WAV 文件',
+                alertMp3Fail: 'MP3 转换失败: ',
+                alertWavFail: 'WAV 转换失败: ',
+                alertPcmFail: 'PCM 转换失败: ',
+                converting: '转换中...',
+            },
+            en: {
+                pageTitle: 'PCM/MP3/WAV Audio Player',
+                metaDescription: 'Online PCM/MP3/WAV audio player with playback, waveform display and format conversion.',
+                ogTitle: 'PCM/MP3/WAV Audio Player - Online Playback & Conversion Tool',
+                ogDescription: 'Online PCM/MP3/WAV audio player with playback, waveform display and format conversion.',
+                title: 'PCM/MP3/WAV Audio Player',
+                dragHint: 'Drop PCM/MP3/WAV files here',
+                selectFiles: 'Select or drop files (multiple)',
+                loadSample: 'Load Sample',
+                fileList: 'File List',
+                clear: 'Clear',
+                noFile: 'No file selected',
+                newWaveform: 'New View',
+                oldWaveform: 'Classic View',
+                play: 'Play',
+                pause: 'Pause',
+                stop: 'Stop',
+                convertMp3: 'Convert to MP3',
+                convertWav: 'Convert to WAV',
+                convertPcm: 'Convert to PCM',
+                sampleRate: 'Sample Rate:',
+                bitDepth: 'Bit Depth:',
+                channels: 'Channels:',
+                endianness: 'Endianness:',
+                mono: 'Mono',
+                stereo: 'Stereo',
+                littleEndian: 'Little Endian',
+                bigEndian: 'Big Endian',
+                likeThisTool: 'Like this tool?',
+                reward: 'Donate',
+                feedback: 'Feedback',
+                rewardTitle: 'If you find this tool helpful, consider supporting it~',
+                totalVisits: 'Total visits: ',
+                times: '',
+                blogLink: 'More audio/video tools at blog.qer.im/projects',
+                alertLoadPcm: 'Please load a PCM file first',
+                alertLoadMp3Wav: 'Please load an MP3/WAV file first',
+                alertMp3Fail: 'MP3 conversion failed: ',
+                alertWavFail: 'WAV conversion failed: ',
+                alertPcmFail: 'PCM conversion failed: ',
+                converting: 'Converting...',
+            }
+        };
+
+        function detectLang() {
+            var saved = localStorage.getItem('pcm_player_lang');
+            if (saved && (saved === 'zh' || saved === 'en')) return saved;
+            var nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
+            return nav.startsWith('en') ? 'en' : 'zh';
+        }
+
+        var currentLang = detectLang();
+
+        function applyLang(lang) {
+            currentLang = lang;
+            var dict = window.I18N[lang] || window.I18N.zh;
+            // 更新 data-i18n 元素
+            document.querySelectorAll('[data-i18n]').forEach(function(el) {
+                var key = el.getAttribute('data-i18n');
+                if (dict[key] !== undefined) el.textContent = dict[key];
+            });
+            // 更新 SEO meta
+            document.title = dict.pageTitle;
+            var metaDesc = document.querySelector('meta[name="description"]');
+            if (metaDesc) metaDesc.setAttribute('content', dict.metaDescription);
+            var ogTitle = document.querySelector('meta[property="og:title"]');
+            if (ogTitle) ogTitle.setAttribute('content', dict.ogTitle);
+            var ogDesc = document.querySelector('meta[property="og:description"]');
+            if (ogDesc) ogDesc.setAttribute('content', dict.ogDescription);
+            var twTitle = document.querySelector('meta[name="twitter:title"]');
+            if (twTitle) twTitle.setAttribute('content', dict.ogTitle);
+            var twDesc = document.querySelector('meta[name="twitter:description"]');
+            if (twDesc) twDesc.setAttribute('content', dict.ogDescription);
+            // 更新切换器高亮
+            document.querySelectorAll('.lang-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+            });
+            localStorage.setItem('pcm_player_lang', lang);
+        }
+
+        window.t = function(key) {
+            var dict = window.I18N[currentLang] || window.I18N.zh;
+            return dict[key] !== undefined ? dict[key] : key;
+        };
+
+        window.getLang = function() { return currentLang; };
+
+        // 页面加载后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() { applyLang(currentLang); });
+        } else {
+            applyLang(currentLang);
+        }
+
+        // 绑定切换按钮
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.lang-btn');
+            if (!btn) return;
+            var lang = btn.getAttribute('data-lang');
+            if (lang) applyLang(lang);
+        });
+
+        window.applyLang = applyLang;
+    })();
+    </script>
     <!-- wavesurfer 脚本（v7 UMD） -->
     <script src="https://unpkg.com/wavesurfer.js@7"></script>
     <!-- 隐藏的音频元素，用于“audio 元素 src”播放模式 -->
