@@ -69,7 +69,14 @@
                 if (this.data.rawPcm) this._refreshFromConfig();
             });
             if (bitDepthSelect) bitDepthSelect.addEventListener('change', (e) => {
-                this.webaudio.config.bitDepth = parseInt(e.target.value, 10);
+                const val = e.target.value;
+                if (val === '32f') {
+                    this.webaudio.config.bitDepth = 32;
+                    this.webaudio.config.sampleFormat = 'float';
+                } else {
+                    this.webaudio.config.bitDepth = parseInt(val, 10);
+                    this.webaudio.config.sampleFormat = 'int';
+                }
                 this._saveSettings();
                 if (this.data.rawPcm) this._refreshFromConfig();
             });
@@ -149,7 +156,10 @@
             const channelsSelect = document.getElementById('channelsSelect');
             const endiannessSelect = document.getElementById('endiannessSelect');
             if (sampleRateSelect) sampleRateSelect.value = String(this.webaudio.config.sampleRate);
-            if (bitDepthSelect) bitDepthSelect.value = String(this.webaudio.config.bitDepth);
+            if (bitDepthSelect) {
+                const bitVal = (this.webaudio.config.bitDepth === 32 && this.webaudio.config.sampleFormat === 'float') ? '32f' : String(this.webaudio.config.bitDepth);
+                bitDepthSelect.value = bitVal;
+            }
             if (channelsSelect) channelsSelect.value = String(this.webaudio.config.channels);
             if (endiannessSelect) endiannessSelect.value = String(this.webaudio.config.endianness || 'little');
         }
@@ -159,7 +169,8 @@
                 sampleRate: this.webaudio.config.sampleRate,
                 bitDepth: this.webaudio.config.bitDepth,
                 channels: this.webaudio.config.channels,
-                endianness: this.webaudio.config.endianness
+                endianness: this.webaudio.config.endianness,
+                sampleFormat: this.webaudio.config.sampleFormat
             };
             try {
                 localStorage.setItem('pcm_player_settings', JSON.stringify(settings));
@@ -175,6 +186,7 @@
                     if (settings.bitDepth) this.webaudio.config.bitDepth = settings.bitDepth;
                     if (settings.channels) this.webaudio.config.channels = settings.channels;
                     if (settings.endianness) this.webaudio.config.endianness = settings.endianness;
+                    if (settings.sampleFormat) this.webaudio.config.sampleFormat = settings.sampleFormat;
                 }
             } catch (e) { /* ignore */ }
             // 始终同步 UI 和 config，确保一致性
@@ -234,14 +246,28 @@
                 const arrayBuffer = await file.arrayBuffer();
                 // PCM 文件：启用参数选择器
                 this._enableSelectors();
-                // 尝试从文件名解析参数（支持多种格式）
-                const parsed = Utils.parseParamsFromFileName(file.name);
+
+                // DHAV 容器检测和剥离
+                let pcmBuffer = arrayBuffer;
+                const dhavResult = Utils.stripDHAV(arrayBuffer);
                 let configChanged = false;
-                if (parsed.sampleRate) { this.webaudio.config.sampleRate = parsed.sampleRate; configChanged = true; }
-                if (parsed.bitDepth) { this.webaudio.config.bitDepth = parsed.bitDepth; configChanged = true; }
-                if (parsed.channels) { this.webaudio.config.channels = parsed.channels; configChanged = true; }
-                if (parsed.endianness) { this.webaudio.config.endianness = parsed.endianness; configChanged = true; }
-                
+
+                if (dhavResult) {
+                    pcmBuffer = dhavResult.pcmData;
+                    this.webaudio.config.sampleRate = dhavResult.sampleRate;
+                    this.webaudio.config.bitDepth = 16;
+                    this.webaudio.config.channels = dhavResult.channels;
+                    this.webaudio.config.endianness = 'little';
+                    configChanged = true;
+                } else {
+                    // 尝试从文件名解析参数（支持多种格式）
+                    const parsed = Utils.parseParamsFromFileName(file.name);
+                    if (parsed.sampleRate) { this.webaudio.config.sampleRate = parsed.sampleRate; configChanged = true; }
+                    if (parsed.bitDepth) { this.webaudio.config.bitDepth = parsed.bitDepth; configChanged = true; }
+                    if (parsed.channels) { this.webaudio.config.channels = parsed.channels; configChanged = true; }
+                    if (parsed.endianness) { this.webaudio.config.endianness = parsed.endianness; configChanged = true; }
+                }
+
                 // 样例文件特判（覆盖）
                 if (/qlx_13sec/i.test(file.name)) {
                     this.webaudio.config.sampleRate = 24000;
@@ -249,19 +275,42 @@
                     this.webaudio.config.channels = 2;
                     configChanged = true;
                 }
-                
+
                 // config 有变化时同步到 UI
                 if (configChanged) this._syncSelectorsFromConfig();
-                this.webaudio.loadPCM(arrayBuffer);
-                this.data.rawPcm = arrayBuffer;
+
+                // 自动检测位深度和 int/float 格式
+                const detected = Utils.detectBitDepth(pcmBuffer, this.webaudio.config.endianness);
+                if (detected) {
+                    const isSame = detected.bitDepth === this.webaudio.config.bitDepth
+                        && detected.sampleFormat === this.webaudio.config.sampleFormat;
+                    if (!isSame) {
+                        const label = detected.bitDepth === 32
+                            ? `${detected.bitDepth}bit-${detected.sampleFormat}`
+                            : `${detected.bitDepth}bit`;
+                        if (!configChanged) {
+                            // 没有来自文件名/DHAV 的参数，静默应用
+                            this.webaudio.config.bitDepth = detected.bitDepth;
+                            this.webaudio.config.sampleFormat = detected.sampleFormat;
+                            this._syncSelectorsFromConfig();
+                        } else if (confirm(window.t('detectFormatConfirm').replace('{0}', label))) {
+                            this.webaudio.config.bitDepth = detected.bitDepth;
+                            this.webaudio.config.sampleFormat = detected.sampleFormat;
+                            this._syncSelectorsFromConfig();
+                        }
+                    }
+                }
+                this.webaudio.loadPCM(pcmBuffer);
+                this.data.rawPcm = pcmBuffer;
                 this.data.fileType = 'pcm';
                 const header = Utils.createWavHeader(
                     this.data.rawPcm.byteLength,
                     this.webaudio.config.channels,
                     this.webaudio.config.sampleRate,
-                    this.webaudio.config.bitDepth
+                    this.webaudio.config.bitDepth,
+                    this.webaudio.config.sampleFormat
                 );
-                const wavBlob = new Blob([header, arrayBuffer], { type: 'audio/wav' });
+                const wavBlob = new Blob([header, pcmBuffer], { type: 'audio/wav' });
                 if (this.data.wavUrl) URL.revokeObjectURL(this.data.wavUrl);
                 const url = URL.createObjectURL(wavBlob);
                 this.data.wavUrl = url;
@@ -333,7 +382,8 @@
                     this.data.rawPcm.byteLength,
                     this.webaudio.config.channels,
                     this.webaudio.config.sampleRate,
-                    this.webaudio.config.bitDepth
+                    this.webaudio.config.bitDepth,
+                    this.webaudio.config.sampleFormat
                 );
                 const wavBlob = new Blob([header, buf], { type: 'audio/wav' });
                 if (this.data.wavUrl) URL.revokeObjectURL(this.data.wavUrl);
@@ -440,10 +490,13 @@
                 <span class="file-tag duration">${Utils.formatTime(duration)}</span>
             `;
             if (type === 'PCM') {
+                const bitLabel = this.webaudio.config.bitDepth === 32
+                    ? `${this.webaudio.config.bitDepth}bit-${this.webaudio.config.sampleFormat === 'float' ? 'float' : 'int'}`
+                    : `${this.webaudio.config.bitDepth}bit`;
                 html += `
                     <span class="file-tag sample-rate">${this.webaudio.config.sampleRate}Hz</span>
                     <span class="file-tag channels">${this.webaudio.config.channels}ch</span>
-                    <span class="file-tag bit-depth">${this.webaudio.config.bitDepth}bit</span>
+                    <span class="file-tag bit-depth">${bitLabel}</span>
                 `;
             } else if (audioParams) {
                 // MP3/WAV 显示从文件解码获取的参数
@@ -569,7 +622,8 @@
                 this.data.rawPcm.byteLength,
                 this.webaudio.config.channels,
                 this.webaudio.config.sampleRate,
-                this.webaudio.config.bitDepth
+                this.webaudio.config.bitDepth,
+                this.webaudio.config.sampleFormat
             );
             const wavBlob = new Blob([header, this.data.rawPcm], { type: 'audio/wav' });
             if (this.data.wavUrl) URL.revokeObjectURL(this.data.wavUrl);
@@ -658,7 +712,8 @@
                     this.webaudio.data.audioBuffer.length * this.webaudio.config.channels * (this.webaudio.config.bitDepth / 8),
                     this.webaudio.config.channels,
                     this.webaudio.config.sampleRate,
-                    this.webaudio.config.bitDepth
+                    this.webaudio.config.bitDepth,
+                    this.webaudio.config.sampleFormat
                 );
                 const blob = new Blob([header, this.data.rawPcm], { type: 'audio/wav' });
                 const url = URL.createObjectURL(blob);
