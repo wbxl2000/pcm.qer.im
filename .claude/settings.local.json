@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(xxd:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:www.ffmpeg.org)",
+      "Bash(node -e:*)",
+      "Bash(ffmpeg:*)",
+      "WebFetch(domain:www.ffmpeg.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(git reset:*)",
+      "WebFetch(domain:nalu.qer.im)",
+      "Bash(node:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(curl:*)"
+    ]
+  }
+}

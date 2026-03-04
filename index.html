@@ -817,6 +817,474 @@
         .lang-btn:hover:not(.active) {
             background: #f5f5f5;
         }
+
+        /* PCM 数据查看器 */
+        .data-viewer-container {
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+        }
+
+        .data-viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-viewer-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .data-viewer-toggle {
+            font-size: 12px;
+            color: #999;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .data-viewer-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .data-viewer-stats {
+            font-size: 12px;
+            color: #888;
+            font-family: 'Fira Code', 'Consolas', monospace;
+        }
+
+        .view-mode-switch {
+            display: inline-flex;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .view-mode-btn {
+            padding: 3px 10px;
+            border: none;
+            background: transparent;
+            font-size: 12px;
+            color: #777;
+            cursor: pointer;
+            transition: background-color .12s ease, color .12s ease;
+        }
+
+        .view-mode-btn:not(:last-child) {
+            border-right: 1px solid #ddd;
+        }
+
+        .view-mode-btn.active {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .view-mode-btn:hover:not(.active) {
+            background: rgba(0,0,0,0.02);
+        }
+
+        .data-viewer-body {
+            position: relative;
+        }
+
+        .data-viewer-scroll {
+            height: 300px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        .data-viewer-content {
+            font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        /* Hex 视图 */
+        .dv-hex-row {
+            display: grid;
+            grid-template-columns: 75px 1fr auto;
+            gap: 10px;
+            height: 28px;
+            align-items: center;
+            padding: 0 12px;
+        }
+
+        .dv-hex-row:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .dv-hex-row.highlight {
+            background: rgba(33, 150, 243, 0.08);
+        }
+
+        .dv-hex-offset {
+            color: #999;
+            padding-right: 8px;
+            border-right: 1px solid #eee;
+            font-size: 12px;
+        }
+
+        .dv-hex-bytes {
+            display: flex;
+            gap: 3px;
+        }
+
+        .dv-hex-byte {
+            width: 20px;
+            text-align: center;
+            display: inline-block;
+            padding: 2px 1px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: #343a40;
+        }
+
+        .dv-hex-byte:hover {
+            background: rgba(33, 150, 243, 0.15);
+            filter: brightness(1.2);
+        }
+
+        .dv-hex-byte.zero {
+            color: #ccc !important;
+        }
+
+        .dv-hex-byte.active {
+            background: rgba(33, 150, 243, 0.2);
+            color: #1565C0 !important;
+            font-weight: 600;
+        }
+
+        .dv-hex-byte.empty {
+            cursor: default;
+        }
+
+        .dv-hex-byte.frame-start {
+            margin-left: 4px;
+            border-left: 1px solid #ccc;
+            padding-left: 2px;
+        }
+
+        .dv-hex-values {
+            color: #999;
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+            padding-left: 8px;
+            border-left: 1px solid #eee;
+        }
+
+        /* Table 视图 */
+        .dv-table-row {
+            display: grid;
+            grid-template-columns: 80px 100px 1fr 60px 100px;
+            gap: 4px;
+            height: 28px;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 13px;
+        }
+
+        .dv-table-row.dv-table-row-multichannel {
+            grid-template-columns: 80px 100px 1fr 70px 70px 100px 100px;
+        }
+
+        .dv-table-header {
+            font-weight: 600;
+            color: #555;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dv-table-header-fixed {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .dv-table-row:not(.dv-table-header):hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .dv-table-row.highlight {
+            background: rgba(33, 150, 243, 0.08);
+        }
+
+        .dv-table-cell {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dv-col-index { color: #999; }
+        .dv-col-offset { color: #999; font-size: 12px; }
+        .dv-col-hex { color: #343a40; }
+        .dv-col-ch { color: #2196F3; font-weight: 500; text-align: center; }
+        .dv-col-raw { color: #666; }
+        .dv-col-float { color: #1976D2; }
+
+        /* 帧序列总览 */
+        .dv-frame-sequence-panel {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .dv-frame-sequence-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .dv-frame-sequence-header label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .dv-seq-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1px;
+            padding: 4px 0;
+            background: #fafafa;
+            border-radius: 4px;
+            min-height: var(--content-height, 30px);
+            align-content: flex-end;
+            position: relative;
+            transition: min-height 0.3s ease;
+        }
+
+        /* 帧结构示意图 */
+        .dv-frame-anatomy {
+            margin-bottom: 10px;
+        }
+
+        .dv-anatomy-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .dv-anatomy-title {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .dv-anatomy-blocks {
+            display: flex;
+            gap: 2px;
+        }
+
+        .dv-anatomy-ch {
+            border: 1.5px solid;
+            border-radius: 4px;
+            padding: 4px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 28px;
+        }
+
+        .dv-anatomy-ch-label {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .dv-anatomy-byte-row {
+            display: flex;
+            gap: 0;
+        }
+
+        .dv-anatomy-byte-label {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 9px;
+            color: #888;
+            width: 28px;
+            text-align: center;
+        }
+
+        .dv-anatomy-tags {
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+        }
+
+        .dv-anatomy-tag {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #f0f0f0;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        /* 时间轴 */
+        .dv-seq-time-axis {
+            position: relative;
+            height: 20px;
+            margin-top: 4px;
+            border-top: 1px solid #ddd;
+        }
+
+        .dv-time-tick {
+            position: absolute;
+            top: 4px;
+            transform: translateX(-50%);
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 10px;
+            color: #999;
+            white-space: nowrap;
+        }
+
+        .dv-time-tick::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            width: 1px;
+            height: 4px;
+            background: #ccc;
+        }
+
+        .dv-time-tick:first-child {
+            transform: translateX(0);
+        }
+
+        .dv-time-tick-end {
+            transform: translateX(-100%);
+            color: #666;
+            font-weight: 600;
+        }
+
+        .dv-seq-item {
+            width: 6px;
+            border-radius: 1px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            transform-origin: bottom;
+            overflow: hidden;
+        }
+
+        .dv-seq-ch-seg {
+            width: 100%;
+            min-height: 1px;
+        }
+
+        .dv-seq-item:hover {
+            transform: scale(1.8);
+            z-index: 1;
+        }
+
+        .dv-seq-item.selected {
+            box-shadow: 0 0 0 1px white, 0 0 0 2px #2196F3;
+            z-index: 2;
+        }
+
+        /* 帧导航和帧信息 */
+        .dv-frame-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-bottom: 1px solid #eee;
+            background: #fafafa;
+        }
+
+        .dv-frame-nav-btn {
+            padding: 2px 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background: white;
+            cursor: pointer;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .dv-frame-nav-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .dv-frame-info {
+            flex: 1;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 12px;
+            color: #555;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 声道颜色图例 */
+        .dv-legend {
+            display: flex;
+            gap: 12px;
+            padding: 6px 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .dv-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .dv-legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        /* Tooltip */
+        .data-viewer-tooltip {
+            position: fixed;
+            background: #343a40;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            z-index: 10000;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .data-viewer-header {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+            .dv-hex-values {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -947,6 +1415,53 @@
                 
             </div>
         </div>
+
+        <!-- PCM 数据查看器 -->
+        <div class="data-viewer-container" id="dataViewerContainer" style="display:none">
+            <div class="data-viewer-header">
+                <div class="data-viewer-title">
+                    <span data-i18n="dataViewer">数据查看器</span>
+                    <span class="data-viewer-toggle" id="dataViewerToggle">▼</span>
+                </div>
+                <div class="data-viewer-controls">
+                    <div class="data-viewer-stats" id="dataViewerStats"></div>
+                    <div class="view-mode-switch">
+                        <button class="view-mode-btn active" data-view="hex">Hex</button>
+                        <button class="view-mode-btn" data-view="table">Table</button>
+                    </div>
+                </div>
+            </div>
+            <div class="data-viewer-body" id="dataViewerBody">
+                <!-- 帧序列总览 -->
+                <div class="dv-frame-sequence-panel" id="frameSequencePanel" style="display:none">
+                    <div class="dv-frame-sequence-header">
+                        <span data-i18n="frameSequence">帧序列总览</span>
+                        <label>
+                            <input type="checkbox" id="ampToggle" checked>
+                            <span data-i18n="showAmplitude">显示振幅</span>
+                        </label>
+                    </div>
+                    <!-- 帧结构示意图 -->
+                    <div class="dv-frame-anatomy" id="frameAnatomy"></div>
+                    <div class="dv-seq-content" id="frameSequenceContent"></div>
+                    <!-- 时间轴 -->
+                    <div class="dv-seq-time-axis" id="seqTimeAxis"></div>
+                </div>
+                <!-- 声道颜色图例 + 帧导航 -->
+                <div class="dv-frame-nav">
+                    <button class="dv-frame-nav-btn" id="framePrev">◀</button>
+                    <button class="dv-frame-nav-btn" id="frameNext">▶</button>
+                    <div class="dv-frame-info" id="frameInfoDisplay"></div>
+                    <div class="dv-legend">
+                        <div class="dv-legend-item"><span class="dv-legend-dot" style="background:#2196F3"></span> Ch0/L</div>
+                        <div class="dv-legend-item"><span class="dv-legend-dot" style="background:#4CAF50"></span> Ch1/R</div>
+                    </div>
+                </div>
+                <div class="data-viewer-scroll" id="dataViewerScroll">
+                    <div class="data-viewer-content" id="dataViewerContent"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="social-container">
@@ -1070,6 +1585,16 @@
                 alertPcmFail: 'PCM 转换失败: ',
                 detectFormatConfirm: '检测到该文件可能是 {0} 格式，是否自动切换？',
                 converting: '转换中...',
+                // 数据查看器
+                dataViewer: '数据查看器',
+                totalSamples: '总样本数',
+                totalBytes: '总字节数',
+                frameSequence: '帧序列总览',
+                showAmplitude: '显示振幅',
+                prevFrame: '上一帧',
+                nextFrame: '下一帧',
+                frameAnatomy: '帧结构',
+                duration: '时长',
             },
             en: {
                 pageTitle: 'PCM/MP3/WAV Audio Player',
@@ -1113,6 +1638,16 @@
                 alertPcmFail: 'PCM conversion failed: ',
                 detectFormatConfirm: 'Detected file format: {0}. Switch automatically?',
                 converting: 'Converting...',
+                // Data Viewer
+                dataViewer: 'Data Viewer',
+                totalSamples: 'Total Samples',
+                totalBytes: 'Total Bytes',
+                frameSequence: 'Frame Sequence',
+                showAmplitude: 'Show Amplitude',
+                prevFrame: 'Prev Frame',
+                nextFrame: 'Next Frame',
+                frameAnatomy: 'Frame Structure',
+                duration: 'Duration',
             }
         };
 
@@ -1185,6 +1720,7 @@
     <script src="./utils.js"></script>
     <script src="./player-webaudio.js"></script>
     <script src="./player-wavesurfer.js"></script>
+    <script src="./pcm-data-viewer.js"></script>
     <script src="./main.js"></script>
     <script>
         // 页面级：拖拽与赞赏弹窗

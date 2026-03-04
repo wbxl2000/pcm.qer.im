@@ -13,7 +13,10 @@
             this.fileNameDisplay = document.getElementById('fileNameDisplay');
             this.wavePoints = [];
             this.data = { rawPcm: null, wavUrl: null, fileUrl: null, fileType: null, fileName: '' };
-            
+
+            // 数据查看器
+            this.dataViewer = new PcmDataViewer(document.getElementById('dataViewerContainer'));
+
             // 文件列表
             this.fileList = [];
             this.currentFileIndex = -1;
@@ -242,6 +245,8 @@
                 document.getElementById('convertButton').disabled = true;
                 document.getElementById('convertWavButton').disabled = true;
                 document.getElementById('convertPcmButton').disabled = false; // MP3/WAV 可以转 PCM
+                document.getElementById('dataViewerContainer').style.display = 'none';
+                this.dataViewer.clear();
             } else {
                 const arrayBuffer = await file.arrayBuffer();
                 // PCM 文件：启用参数选择器
@@ -303,6 +308,8 @@
                 this.webaudio.loadPCM(pcmBuffer);
                 this.data.rawPcm = pcmBuffer;
                 this.data.fileType = 'pcm';
+                document.getElementById('dataViewerContainer').style.display = '';
+                this.dataViewer.load(pcmBuffer, { ...this.webaudio.config });
                 const header = Utils.createWavHeader(
                     this.data.rawPcm.byteLength,
                     this.webaudio.config.channels,
@@ -378,6 +385,8 @@
                 this.webaudio.loadPCM(buf);
                 this.data.rawPcm = buf;
                 this.data.fileType = 'pcm';
+                document.getElementById('dataViewerContainer').style.display = '';
+                this.dataViewer.load(buf, { ...this.webaudio.config });
                 const header = Utils.createWavHeader(
                     this.data.rawPcm.byteLength,
                     this.webaudio.config.channels,
@@ -444,11 +453,19 @@
             if (this.mode === 'element' && this.htmlAudio) this.htmlAudio.currentTime = t;
             this._renderProgress(t);
             this.currentTimeEl.textContent = Utils.formatTime(t);
+            if (this.dataViewer && this.data.rawPcm) {
+                const sampleIndex = Math.floor(t * this.webaudio.config.sampleRate);
+                this.dataViewer.scrollToSample(sampleIndex);
+            }
         }
 
         _onTime(t) {
             this.currentTimeEl.textContent = Utils.formatTime(t);
             this._renderProgress(t);
+            if (this.dataViewer && this.data.rawPcm) {
+                const sampleIndex = Math.floor(t * this.webaudio.config.sampleRate);
+                this.dataViewer.highlightSample(sampleIndex);
+            }
         }
 
         _onState(evt) {
@@ -618,6 +635,7 @@
         _refreshFromConfig() {
             if (!this.data.rawPcm) return;
             this.webaudio.loadPCM(this.data.rawPcm);
+            this.dataViewer.load(this.data.rawPcm, { ...this.webaudio.config });
             const header = Utils.createWavHeader(
                 this.data.rawPcm.byteLength,
                 this.webaudio.config.channels,
